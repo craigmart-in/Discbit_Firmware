@@ -2,8 +2,10 @@
 #include "9dof.h"
 #include "quaternionFilters.h"
 #include "MPU9250.h"
+#include "discData.h"
 
 MPU9250 myIMU;
+DiscData discData;
 unsigned long lastPublishTime = 0;
 
 void setup9dof() {
@@ -77,7 +79,7 @@ void setup9dof() {
 void collect9dofData() {
   if ((millis() - lastPublishTime) >= PUBLISH_TIME) {
 
-      //publish_9dof_data();
+      Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
 
       lastPublishTime = millis();
   }
@@ -260,11 +262,11 @@ void collect9dofData() {
         Serial.print((float)myIMU.sumCount/myIMU.sum, 2);
         Serial.println(" Hz");
       }
-/*
+
         discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
                                 myIMU.gx,myIMU.gy,myIMU.gz,
                                 myIMU.mx,myIMU.my,myIMU.mz,
-                                myIMU.yaw,myIMU.pitch,myIMU.roll);*/
+                                myIMU.yaw,myIMU.pitch,myIMU.roll);
 
       myIMU.count = millis();
       myIMU.sumCount = 0;

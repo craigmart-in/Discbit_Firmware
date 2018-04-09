@@ -25,13 +25,13 @@ void DiscData::initDiscData(float ax, float ay, float az,
 
 String DiscData::generateJson() {
     String payload = "{";
-    payload += String::format("\"ax\": %f, \"ay\": %f, \"az\": %f",
+    payload += String::format("\"ax\": %.2f, \"ay\": %.2f, \"az\": %.2f",
         _ax, _ay, _az);
-    payload += String::format("\"gx\": %f, \"gy\": %f, \"gz\": %f",
+    payload += String::format("\"gx\": %.2f, \"gy\": %.2f, \"gz\": %.2f",
         _gx, _gy, _gz);
-    payload += String::format("\"mx\": %f, \"my\": %f, \"mz\": %f",
+    payload += String::format("\"mx\": %.2f, \"my\": %.2f, \"mz\": %.2f",
         _mx, _my, _mz);
-    payload += String::format("\"yaw\": %f, \"pitch\": %f, \"roll\": %f",
+    payload += String::format("\"yaw\": %.2f, \"pitch\": %.2f, \"roll\": %.2f",
         _yaw, _pitch, _roll);
     payload += "}";
 
