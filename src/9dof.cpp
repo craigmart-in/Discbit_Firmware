@@ -77,7 +77,7 @@ void setup9dof() {
 }
 
 void collect9dofData() {
-  if ((millis() - lastPublishTime) >= PUBLISH_TIME) {
+  if ((millis() - lastPublishTime) >= PUBLISH_INTERVAL) {
 
       Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
 
@@ -196,9 +196,9 @@ void collect9dofData() {
     {
       if(SerialDebug)
       {
-        Serial.print("ax = "); Serial.printf("%8.2f",(int)myIMU.ax);
-        Serial.print("    ay = "); Serial.printf("%8.2f",(int)myIMU.ay);
-        Serial.print("    az = "); Serial.printf("%8.2f",(int)myIMU.az);
+        Serial.print("ax = "); Serial.printf("%8.2f",myIMU.ax);
+        Serial.print("    ay = "); Serial.printf("%8.2f",myIMU.ay);
+        Serial.print("    az = "); Serial.printf("%8.2f",myIMU.az);
         Serial.println(" mg");
 
         Serial.print("gx = "); Serial.printf("%8.2f", myIMU.gx);
@@ -206,9 +206,9 @@ void collect9dofData() {
         Serial.print("    gz = "); Serial.printf("%8.2f", myIMU.gz);
         Serial.println(" deg/s");
 
-        Serial.print("mx = "); Serial.printf("%8.2f", (int)myIMU.mx );
-        Serial.print("    my = "); Serial.printf("%8.2f", (int)myIMU.my );
-        Serial.print("    mz = "); Serial.printf("%8.2f", (int)myIMU.mz );
+        Serial.print("mx = "); Serial.printf("%8.2f", myIMU.mx );
+        Serial.print("    my = "); Serial.printf("%8.2f", myIMU.my );
+        Serial.print("    mz = "); Serial.printf("%8.2f", myIMU.mz );
         Serial.println(" mG");
 
         Serial.print("q0 = "); Serial.printlnf("%8.2f",*getQ());
