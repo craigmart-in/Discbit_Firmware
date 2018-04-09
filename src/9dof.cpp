@@ -1,53 +1,12 @@
-// This #include statement was automatically added by the Particle IDE.
-#include "discData.h"
-
-/* MPU9250 Basic Example Code
- by: Kris Winer
- date: April 1, 2014
- license: Beerware - Use this code however you'd like. If you
- find it useful you can buy me a beer some time.
- Modified by Brent Wilkins July 19, 2016
- Modified by Craig Martin March 15, 2018
-
- Demonstrate basic MPU-9250 functionality including parameterizing the register
- addresses, initializing the sensor, getting properly scaled accelerometer,
- gyroscope, and magnetometer data out. Added display functions to allow display
- to on breadboard monitor. Addition of 9 DoF sensor fusion using open source
- Madgwick and Mahony filter algorithms. Sketch runs on the 3.3 V 8 MHz Pro Mini
- and the Teensy 3.1.
-
- SDA and SCL should have external pull-up resistors (to 3.3V).
- 10k resistors are on the EMSENSR-9250 breakout board.
-
- Hardware setup:
- MPU9250 Breakout --------- Particle
- 3v3 --------------------- 3.3V
- SDA ----------------------- D0
- SCL ----------------------- D1
- GND ---------------------- GND
- */
-
+#include "application.h"
+#include "9dof.h"
 #include "quaternionFilters.h"
 #include "MPU9250.h"
 
-
-#define AHRS true         // Set to false for basic data read
-#define SerialDebug true  // Set to true to get Serial output for debugging
-
-#define MPU9250_ADDRESS 0x68
-#define EXPECTED_MP9250_WHO_AM_I 0x73
-
 MPU9250 myIMU;
-
 unsigned long lastPublishTime = 0;
-DiscData discData;
 
-void dofSetup()
-{
-  Wire.begin();
-  // TWBR = 12;  // 400 kbit/sec I2C speed
-  Serial.begin(9600);
-
+void setup9dof() {
   // Read the WHO_AM_I register, this is a good test of communication
   byte c = myIMU.readByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250);
   Serial.print("MPU9250 "); Serial.print("I AM "); Serial.print(c, HEX);
@@ -115,16 +74,13 @@ void dofSetup()
   }
 }
 
-void dofLoop()
-{
-    unsigned long now = millis();
-    if ((now - lastPublishTime) >= 1000) {
-        Serial.println("Punlishing data...");
-        Particle.publish("disc_data",
-                         discData.generateJson(),
-                         PRIVATE);
-        lastPublishTime = now;
-    }
+void collect9dofData() {
+  if ((millis() - lastPublishTime) >= PUBLISH_TIME) {
+
+      //publish_9dof_data();
+
+      lastPublishTime = millis();
+  }
 
   // If intPin goes high, all data registers have new data
   // On interrupt, check if data ready interrupt
@@ -304,11 +260,11 @@ void dofLoop()
         Serial.print((float)myIMU.sumCount/myIMU.sum, 2);
         Serial.println(" Hz");
       }
-
+/*
         discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
                                 myIMU.gx,myIMU.gy,myIMU.gz,
                                 myIMU.mx,myIMU.my,myIMU.mz,
-                                myIMU.yaw,myIMU.pitch,myIMU.roll);
+                                myIMU.yaw,myIMU.pitch,myIMU.roll);*/
 
       myIMU.count = millis();
       myIMU.sumCount = 0;
@@ -316,14 +272,3 @@ void dofLoop()
     } // if (myIMU.delt_t > 500)
   } // if (AHRS)
 }
-
-/*
-String convertAllDiscDataToJson() {
-    String payload = "[";
-    for (int i=0; i<discDataCount; i++) {
-        payload += discData[i].generateJson();
-        payload += ",";
-    }
-    payload += "]";
-    return payload;
-}*/

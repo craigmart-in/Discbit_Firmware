@@ -31,6 +31,6 @@ DFU - No connection
 // A small helper
 void error(const char *err);
 
-void bleSetup();
+void setupBle();
 
 void getUserInput(char buffer[], uint8_t maxSize);

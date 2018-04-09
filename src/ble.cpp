@@ -8,7 +8,7 @@ void error(const char *err) {
   while (1);
 }
 
-void bleSetup() {
+void setupBle() {
   Serial.println(F("Adafruit Bluefruit AT Command Example"));
   Serial.println(F("-------------------------------------"));
 
