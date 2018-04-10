@@ -5,15 +5,6 @@
  * Date:
  */
 
-/*
-Hardware setup:
-MPU9250 Breakout --------- Particle
-3v3 --------------------- 3.3V
-SDA ----------------------- D0
-SCL ----------------------- D1
-GND ---------------------- GND
-*/
-
 #include "ble.h"
 #include "9dof.h"
 

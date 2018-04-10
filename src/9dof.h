@@ -1,6 +1,15 @@
 #ifndef _DISCBIT_9DOF_H_
 #define _DISCBIT_9DOF_H_
 
+/*
+Hardware setup:
+MPU9250 Breakout --------- Particle
+3v3 --------------------- 3.3V
+SDA ----------------------- D0
+SCL ----------------------- D1
+GND ---------------------- GND
+*/
+
 #define SerialDebug true  // Set to true to get Serial output for debugging
 
 #define MPU9250_ADDRESS 0x68
