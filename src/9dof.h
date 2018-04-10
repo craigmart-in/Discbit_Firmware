@@ -1,7 +1,6 @@
 #ifndef _DISCBIT_9DOF_H_
 #define _DISCBIT_9DOF_H_
 
-#define AHRS true         // Set to false for basic data read
 #define SerialDebug true  // Set to true to get Serial output for debugging
 
 #define MPU9250_ADDRESS 0x68

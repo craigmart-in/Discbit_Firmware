@@ -79,15 +79,19 @@ void setup9dof() {
 void collect9dofData() {
   if ((millis() - lastPublishTime) >= PUBLISH_INTERVAL) {
 
-      Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
+    discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
+                            myIMU.gx,myIMU.gy,myIMU.gz,
+                            myIMU.mx,myIMU.my,myIMU.mz,
+                            myIMU.yaw,myIMU.pitch,myIMU.roll);
 
-      lastPublishTime = millis();
+    Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
+
+    lastPublishTime = millis();
   }
 
   // If intPin goes high, all data registers have new data
   // On interrupt, check if data ready interrupt
-  if (myIMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
-  {
+  if (myIMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
     myIMU.readAccelData(myIMU.accelCount);  // Read the x/y/z adc values
     myIMU.getAres();
 
@@ -139,138 +143,81 @@ void collect9dofData() {
   // along the x-axis just like in the LSM9DS0 sensor. This rotation can be
   // modified to allow any convenient orientation convention. This is ok by
   // aircraft orientation standards! Pass gyro rate as rad/s
-//  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+  //  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
   MahonyQuaternionUpdate(myIMU.ax, myIMU.ay, myIMU.az, myIMU.gx*DEG_TO_RAD,
                          myIMU.gy*DEG_TO_RAD, myIMU.gz*DEG_TO_RAD, myIMU.my,
                          myIMU.mx, myIMU.mz, myIMU.deltat);
 
-  if (!AHRS)
-  {
-    myIMU.delt_t = millis() - myIMU.count;
-    if (myIMU.delt_t > 500)
-    {
-      if(SerialDebug)
-      {
-        // Print acceleration values in milligs!
-        Serial.print("X-acceleration: "); Serial.print(myIMU.ax);
-        Serial.print(" mg ");
-        Serial.print("Y-acceleration: "); Serial.print(myIMU.ay);
-        Serial.print(" mg ");
-        Serial.print("Z-acceleration: "); Serial.print(myIMU.az);
-        Serial.println(" mg ");
 
-        // Print gyro values in degree/sec
-        Serial.print("X-gyro rate: "); Serial.print(myIMU.gx, 3);
-        Serial.print(" degrees/sec ");
-        Serial.print("Y-gyro rate: "); Serial.print(myIMU.gy, 3);
-        Serial.print(" degrees/sec ");
-        Serial.print("Z-gyro rate: "); Serial.print(myIMU.gz, 3);
-        Serial.println(" degrees/sec");
+  // Serial print and/or display at 0.5 s rate independent of data rates
+  myIMU.delt_t = millis() - myIMU.count;
 
-        // Print mag values in degree/sec
-        Serial.print("X-mag field: "); Serial.print(myIMU.mx);
-        Serial.print(" mG ");
-        Serial.print("Y-mag field: "); Serial.print(myIMU.my);
-        Serial.print(" mG ");
-        Serial.print("Z-mag field: "); Serial.print(myIMU.mz);
-        Serial.println(" mG");
+  // Define output variables from updated quaternion---these are Tait-Bryan
+  // angles, commonly used in aircraft orientation. In this coordinate system,
+  // the positive z-axis is down toward Earth. Yaw is the angle between Sensor
+  // x-axis and Earth magnetic North (or true North if corrected for local
+  // declination, looking down on the sensor positive yaw is counterclockwise.
+  // Pitch is angle between sensor x-axis and Earth ground plane, toward the
+  // Earth is positive, up toward the sky is negative. Roll is angle between
+  // sensor y-axis and Earth ground plane, y-axis up is positive roll. These
+  // arise from the definition of the homogeneous rotation matrix constructed
+  // from quaternions. Tait-Bryan angles as well as Euler angles are
+  // non-commutative; that is, the get the correct orientation the rotations
+  // must be applied in the correct order which for this configuration is yaw,
+  // pitch, and then roll.
+  // For more see
+  // http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+  // which has additional links.
+  myIMU.yaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ() *
+                *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1) * *(getQ()+1)
+                - *(getQ()+2) * *(getQ()+2) - *(getQ()+3) * *(getQ()+3));
+  myIMU.pitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ() *
+                *(getQ()+2)));
+  myIMU.roll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2) *
+                *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1) * *(getQ()+1)
+                - *(getQ()+2) * *(getQ()+2) + *(getQ()+3) * *(getQ()+3));
+  myIMU.pitch *= RAD_TO_DEG;
+  myIMU.yaw   *= RAD_TO_DEG;
+  // Declination of SparkFun Electronics (40°05'26.6"N 105°11'05.9"W) is
+  // 	8° 30' E  ± 0° 21' (or 8.5°) on 2016-07-19
+  // - http://www.ngdc.noaa.gov/geomag-web/#declination
+  myIMU.yaw   -= 0.62;
+  myIMU.roll  *= RAD_TO_DEG;
 
-        myIMU.tempCount = myIMU.readTempData();  // Read the adc values
-        // Temperature in degrees Centigrade
-        myIMU.temperature = ((float) myIMU.tempCount) / 333.87 + 21.0;
-        // Print temperature in degrees Centigrade
-        Serial.print("Temperature is ");  Serial.print(myIMU.temperature, 1);
-        Serial.println(" degrees C");
-      }
+  // update LCD once per half-second independent of read rate
+  if (myIMU.delt_t > 500) {
+    if(SerialDebug) {
+      Serial.print("ax = "); Serial.printf("%8.2f",myIMU.ax);
+      Serial.print("    ay = "); Serial.printf("%8.2f",myIMU.ay);
+      Serial.print("    az = "); Serial.printf("%8.2f",myIMU.az);
+      Serial.println(" mg");
 
-      myIMU.count = millis();
-    } // if (myIMU.delt_t > 500)
-  } // if (!AHRS)
-  else
-  {
-    // Serial print and/or display at 0.5 s rate independent of data rates
-    myIMU.delt_t = millis() - myIMU.count;
+      Serial.print("gx = "); Serial.printf("%8.2f", myIMU.gx);
+      Serial.print("    gy = "); Serial.printf("%8.2f", myIMU.gy);
+      Serial.print("    gz = "); Serial.printf("%8.2f", myIMU.gz);
+      Serial.println(" deg/s");
 
-    // update LCD once per half-second independent of read rate
-    if (myIMU.delt_t > 500)
-    {
-      if(SerialDebug)
-      {
-        Serial.print("ax = "); Serial.printf("%8.2f",myIMU.ax);
-        Serial.print("    ay = "); Serial.printf("%8.2f",myIMU.ay);
-        Serial.print("    az = "); Serial.printf("%8.2f",myIMU.az);
-        Serial.println(" mg");
+      Serial.print("mx = "); Serial.printf("%8.2f", myIMU.mx );
+      Serial.print("    my = "); Serial.printf("%8.2f", myIMU.my );
+      Serial.print("    mz = "); Serial.printf("%8.2f", myIMU.mz );
+      Serial.println(" mG");
 
-        Serial.print("gx = "); Serial.printf("%8.2f", myIMU.gx);
-        Serial.print("    gy = "); Serial.printf("%8.2f", myIMU.gy);
-        Serial.print("    gz = "); Serial.printf("%8.2f", myIMU.gz);
-        Serial.println(" deg/s");
+      Serial.print("q0 = "); Serial.printlnf("%8.2f",*getQ());
+      Serial.print("qx = "); Serial.printf("%8.2f",*(getQ() + 1));
+      Serial.print("    qy = "); Serial.printf("%8.2f",*(getQ() + 2));
+      Serial.print("    qz = "); Serial.printlnf("%8.2f",*(getQ() + 3));
 
-        Serial.print("mx = "); Serial.printf("%8.2f", myIMU.mx );
-        Serial.print("    my = "); Serial.printf("%8.2f", myIMU.my );
-        Serial.print("    mz = "); Serial.printf("%8.2f", myIMU.mz );
-        Serial.println(" mG");
+      Serial.print("Yaw = "); Serial.printf("%8.2f", myIMU.yaw);
+      Serial.print("    Pitch = "); Serial.printf("%8.2f", myIMU.pitch);
+      Serial.print("    Roll = "); Serial.printlnf("%8.2f", myIMU.roll);
 
-        Serial.print("q0 = "); Serial.printlnf("%8.2f",*getQ());
-        Serial.print("qx = "); Serial.printf("%8.2f",*(getQ() + 1));
-        Serial.print("    qy = "); Serial.printf("%8.2f",*(getQ() + 2));
-        Serial.print("    qz = "); Serial.printlnf("%8.2f",*(getQ() + 3));
-      }
+      Serial.print("rate = ");
+      Serial.print((float)myIMU.sumCount/myIMU.sum, 2);
+      Serial.println(" Hz");
+    }
 
-// Define output variables from updated quaternion---these are Tait-Bryan
-// angles, commonly used in aircraft orientation. In this coordinate system,
-// the positive z-axis is down toward Earth. Yaw is the angle between Sensor
-// x-axis and Earth magnetic North (or true North if corrected for local
-// declination, looking down on the sensor positive yaw is counterclockwise.
-// Pitch is angle between sensor x-axis and Earth ground plane, toward the
-// Earth is positive, up toward the sky is negative. Roll is angle between
-// sensor y-axis and Earth ground plane, y-axis up is positive roll. These
-// arise from the definition of the homogeneous rotation matrix constructed
-// from quaternions. Tait-Bryan angles as well as Euler angles are
-// non-commutative; that is, the get the correct orientation the rotations
-// must be applied in the correct order which for this configuration is yaw,
-// pitch, and then roll.
-// For more see
-// http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-// which has additional links.
-      myIMU.yaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ() *
-                    *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1) * *(getQ()+1)
-                    - *(getQ()+2) * *(getQ()+2) - *(getQ()+3) * *(getQ()+3));
-      myIMU.pitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ() *
-                    *(getQ()+2)));
-      myIMU.roll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2) *
-                    *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1) * *(getQ()+1)
-                    - *(getQ()+2) * *(getQ()+2) + *(getQ()+3) * *(getQ()+3));
-      myIMU.pitch *= RAD_TO_DEG;
-      myIMU.yaw   *= RAD_TO_DEG;
-      // Declination of SparkFun Electronics (40°05'26.6"N 105°11'05.9"W) is
-      // 	8° 30' E  ± 0° 21' (or 8.5°) on 2016-07-19
-      // - http://www.ngdc.noaa.gov/geomag-web/#declination
-      myIMU.yaw   -= 0.62;
-      myIMU.roll  *= RAD_TO_DEG;
-
-      if(SerialDebug)
-      {
-        Serial.print("Yaw, Pitch, Roll: ");
-        Serial.print(myIMU.yaw, 2);
-        Serial.print(", ");
-        Serial.print(myIMU.pitch, 2);
-        Serial.print(", ");
-        Serial.println(myIMU.roll, 2);
-
-        Serial.print("rate = ");
-        Serial.print((float)myIMU.sumCount/myIMU.sum, 2);
-        Serial.println(" Hz");
-      }
-
-        discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
-                                myIMU.gx,myIMU.gy,myIMU.gz,
-                                myIMU.mx,myIMU.my,myIMU.mz,
-                                myIMU.yaw,myIMU.pitch,myIMU.roll);
-
-      myIMU.count = millis();
-      myIMU.sumCount = 0;
-      myIMU.sum = 0;
-    } // if (myIMU.delt_t > 500)
-  } // if (AHRS)
+    myIMU.count = millis();
+    myIMU.sumCount = 0;
+    myIMU.sum = 0;
+  }
 }
