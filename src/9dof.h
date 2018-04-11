@@ -1,6 +1,8 @@
 #ifndef _DISCBIT_9DOF_H_
 #define _DISCBIT_9DOF_H_
 
+#include "discData.h"
+
 /*
 Hardware setup:
 MPU9250 Breakout --------- Particle
@@ -18,6 +20,6 @@ GND ---------------------- GND
 #define PUBLISH_INTERVAL 5000
 
 void setup9dof();
-void collect9dofData();
+void collect9dofData(DiscData &discData);
 
 #endif // _DISCBIT_9DOF_H_

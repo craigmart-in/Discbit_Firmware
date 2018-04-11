@@ -5,8 +5,13 @@
  * Date:
  */
 
+#include "Adafruit_BluefruitLE_UART.h"
 #include "ble.h"
 #include "9dof.h"
+#include "discData.h"
+
+Adafruit_BluefruitLE_UART ble(&Serial1, BLUEFRUIT_UART_MODE_PIN);
+DiscData discData;
 
 // setup() runs once, when the device is first turned on.
 void setup() {
@@ -15,11 +20,14 @@ void setup() {
   // wait to allow for serial monitor.
   delay(1000);
 
-  setupBle();
+  setupBle(ble);
   setup9dof();
 }
 
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
-  collect9dofData();
+  //if (ble.isConnected()) {
+    collect9dofData(discData);
+    ble.println(discData.generateJson());
+  //}
 }

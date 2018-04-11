@@ -18,7 +18,7 @@ DFU - No connection
 #include "Adafruit_BluefruitLE_UART.h"
 
 #define BUFSIZE                        128   // Size of the read buffer for incoming data
-#define VERBOSE_MODE                   true  // If set to 'true' enables debug output
+#define VERBOSE_MODE                   false  // If set to 'true' enables debug output
 
 /*=========================================================================
     APPLICATION SETTINGS                                                   */
@@ -31,6 +31,6 @@ DFU - No connection
 // A small helper
 void error(const char *err);
 
-void setupBle();
+void setupBle(Adafruit_BluefruitLE_UART &ble);
 
 void getUserInput(char buffer[], uint8_t maxSize);

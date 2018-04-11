@@ -1,14 +1,12 @@
 #include "ble.h"
 
-Adafruit_BluefruitLE_UART ble(&Serial1, BLUEFRUIT_UART_MODE_PIN);
-
 // A small helper
 void error(const char *err) {
-  //Serial.println(err);
+  Serial.println(err);
   while (1);
 }
 
-void setupBle() {
+void setupBle(Adafruit_BluefruitLE_UART &ble) {
   Serial.println(F("Adafruit Bluefruit AT Command Example"));
   Serial.println(F("-------------------------------------"));
 

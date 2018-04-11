@@ -5,7 +5,6 @@
 #include "discData.h"
 
 MPU9250 myIMU;
-DiscData discData;
 unsigned long lastPublishTime = 0;
 
 void setup9dof() {
@@ -76,7 +75,7 @@ void setup9dof() {
   }
 }
 
-void collect9dofData() {
+void collect9dofData(DiscData &discData) {
   if ((millis() - lastPublishTime) >= PUBLISH_INTERVAL) {
 
     discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
