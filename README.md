@@ -10,10 +10,10 @@ AT+GAPDEVNAME=Discbit
 AT+HWMODELED=Disable
 
 // Set the beacon URL
-//AT+EDDYSTONEURL=https://discbits.com
+AT+EDDYSTONEURL=https://discbits.com
 
 // Enable the beacon
-//AT+EddyStoneServiceEn=on
+AT+EddyStoneServiceEn=on
 
 // Broadcast the beacon
-//AT+EddyStoneBroadcast=1
+AT+EddyStoneBroadcast=1
