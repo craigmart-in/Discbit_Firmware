@@ -49,7 +49,7 @@ void setupBle() {
   ble.sendCommandCheckOK("AT+GAPDEVNAME=Discbit");
   ble.sendCommandCheckOK("AT+EDDYSTONEURL=https://discbits.com");
   ble.sendCommandCheckOK("AT+EddyStoneServiceEn=on");
-  ble.sendCommandCheckOK("AT+EddyStoneBroadcast=1");
+  ble.sendCommandCheckOK("AT+EddyStoneBroadcast=0");
 
   Serial.println("Requesting Bluefruit info:");
   /* Print Bluefruit information */
