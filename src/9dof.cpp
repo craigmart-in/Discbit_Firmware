@@ -76,18 +76,6 @@ void setup9dof() {
 }
 
 void collect9dofData(DiscData &discData) {
-  if ((millis() - lastPublishTime) >= PUBLISH_INTERVAL) {
-
-    discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
-                            myIMU.gx,myIMU.gy,myIMU.gz,
-                            myIMU.mx,myIMU.my,myIMU.mz,
-                            myIMU.yaw,myIMU.pitch,myIMU.roll);
-
-    Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
-
-    lastPublishTime = millis();
-  }
-
   // If intPin goes high, all data registers have new data
   // On interrupt, check if data ready interrupt
   if (myIMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
@@ -183,6 +171,17 @@ void collect9dofData(DiscData &discData) {
   myIMU.yaw   -= 0.62;
   myIMU.roll  *= RAD_TO_DEG;
 
+  discData.initDiscData(myIMU.ax,myIMU.ay,myIMU.az,
+                            myIMU.gx,myIMU.gy,myIMU.gz,
+                            myIMU.mx,myIMU.my,myIMU.mz,
+                            myIMU.yaw,myIMU.pitch,myIMU.roll);
+  
+  if ((millis() - lastPublishTime) >= PUBLISH_INTERVAL) {
+    Particle.publish("discbit_data", discData.generateJson(), 60, PRIVATE);
+
+    lastPublishTime = millis();
+  }
+  
   // update LCD once per half-second independent of read rate
   if (myIMU.delt_t > 500) {
     if(SerialDebug) {
