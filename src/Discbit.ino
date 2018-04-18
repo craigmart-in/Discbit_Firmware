@@ -24,6 +24,11 @@
 Adafruit_BluefruitLE_UART ble(BLUEFRUIT_HWSERIAL_NAME, BLUEFRUIT_UART_MODE_PIN);
 DiscData discData;
 
+int LED = D7;
+int mom_pin = D3;
+bool light_on = false;
+unsigned long light_on_time;
+
 // A small helper
 void error(const char *err) {
   Serial.println(err);
@@ -86,6 +91,9 @@ void setup() {
   Serial.begin(115200);
   Wire.begin();
 
+  pinMode(mom_pin, INPUT_PULLDOWN);
+  pinMode(LED, OUTPUT);
+
   setupBle();
   setup9dof();
 }
@@ -94,4 +102,22 @@ void setup() {
 void loop() {
   collect9dofData(discData);
   ble.println(discData.generateJson());
+
+  // Detect disc in basket
+  int mom_state = 0;
+  // perform digital reads (returns either 1 or 0 if it sees "HIGH" or "LOW" voltage)
+  mom_state = digitalRead(mom_pin);
+
+  if (mom_state == 1) {
+    Particle.publish("disc-in-basket", PRIVATE);
+
+    light_on = true;
+    digitalWrite(LED, HIGH);
+    light_on_time = millis();
+  }
+
+  if (light_on && (millis() - light_on_time > 2000)) {
+    light_on = false;
+    digitalWrite(LED, LOW);
+  }
 }
