@@ -103,7 +103,7 @@ void setup() {
 void loop() {
   collect9dofData(discData);
 
-  if (millis() - last_ble_write > 500) {
+  if (millis() - last_ble_write > 50) {
     last_ble_write = millis();
     ble.println(discData.generateJson());
   }
