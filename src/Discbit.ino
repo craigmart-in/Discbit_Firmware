@@ -28,6 +28,7 @@ int LED = D7;
 int mom_pin = D3;
 bool light_on = false;
 unsigned long light_on_time;
+unsigned long last_ble_write;
 
 // A small helper
 void error(const char *err) {
@@ -76,7 +77,7 @@ void setupBle() {
     ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
   }
 
-  // Turn of beacon
+  // Turn off beacon
   ble.sendCommandCheckOK("AT+EddyStoneBroadcast=0");
 
   // Set module to DATA mode
@@ -101,7 +102,11 @@ void setup() {
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
   collect9dofData(discData);
-  ble.println(discData.generateJson());
+
+  if (millis() - last_ble_write > 500) {
+    last_ble_write = millis();
+    ble.println(discData.generateJson());
+  }
 
   // Detect disc in basket
   int mom_state = 0;
@@ -109,7 +114,7 @@ void loop() {
   mom_state = digitalRead(mom_pin);
 
   if (mom_state == 1) {
-    Particle.publish("disc-in-basket", PRIVATE);
+    Particle.publish("disc-in-basket", "<put disc id here>", 60, PRIVATE);
 
     light_on = true;
     digitalWrite(LED, HIGH);
